@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HostelCare - Complaint Management System</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#172033}
+header{background:#172554;color:#fff;text-align:center;padding:30px 16px}
+header h1{margin:0 0 8px;font-size:32px}header p{margin:0}
+main{max-width:950px;margin:25px auto;padding:0 15px}.card{background:#fff;border-radius:16px;padding:22px;margin-bottom:20px;box-shadow:0 5px 20px rgba(0,0,0,.08)}
+h2{margin-top:0}input,select,textarea{width:100%;padding:12px;margin:7px 0;border:1px solid #ccd4df;border-radius:9px;font-size:15px}
+textarea{min-height:100px;resize:vertical}button{padding:12px 16px;border:0;border-radius:9px;background:#2563eb;color:#fff;font-weight:bold;cursor:pointer}
+.primary{width:100%;margin-top:8px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{padding:15px;background:#eef4ff;border-radius:10px;text-align:center}.stat b{font-size:24px}
+.complaint{border:1px solid #e0e5ec;border-radius:12px;padding:15px;margin-top:12px}
+.status{display:inline-block;padding:5px 9px;border-radius:20px;background:#fff3cd;margin-bottom:8px}
+.actions{margin-top:10px}.actions button{margin:3px;font-size:13px;padding:8px}
+footer{text-align:center;padding:20px;color:#64748b}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}header h1{font-size:27px}}
+</style>
+</head>
+<body>
+<header>
+<h1>🏠 HostelCare</h1>
+<p>Smart Hostel Complaint & Maintenance Management System</p>
+</header>
+
+<main>
+<section class="card">
+<h2>📝 Submit a Complaint</h2>
+<form id="complaintForm">
+<input id="studentName" placeholder="Student Name" required>
+<input id="roomNumber" placeholder="Room Number" required>
+<select id="category" required>
+<option value="">Select Category</option>
+<option>Water</option><option>Electricity</option><option>Wi-Fi</option>
+<option>Cleaning</option><option>Food</option><option>Maintenance</option><option>Other</option>
+</select>
+<select id="priority" required>
+<option value="">Select Priority</option><option>Low</option><option>Medium</option><option>High</option>
+</select>
+<textarea id="description" placeholder="Describe the problem" required></textarea>
+<button class="primary" type="submit">Submit Complaint</button>
+</form>
+</section>
+
+<section class="card">
+<h2>📊 Complaint Dashboard</h2>
+<div id="stats"></div>
+<div id="complaints"></div>
+</section>
+</main>
+
+<footer>HostelCare • Student Hostel Complaint Management</footer>
+
+<script>
+const form=document.getElementById("complaintForm");
+const complaintsEl=document.getElementById("complaints");
+const statsEl=document.getElementById("stats");
+let complaints=JSON.parse(localStorage.getItem("hostelCareComplaints")||"[]");
+
+function escapeHtml(s){
+return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",""":"&quot;","'":"&#039;"}[m]));
+}
+function save(){localStorage.setItem("hostelCareComplaints",JSON.stringify(complaints));render();}
+function updateStatus(i,status){complaints[i].status=status;save();}
+function removeComplaint(i){complaints.splice(i,1);save();}
+
+function render(){
+let counts={Pending:0,"In Progress":0,Resolved:0};
+complaints.forEach(c=>counts[c.status]++);
+statsEl.innerHTML=`<div class="stats">
+<div class="stat"><b>${complaints.length}</b><br>Total</div>
+<div class="stat"><b>${counts.Pending}</b><br>Pending</div>
+<div class="stat"><b>${counts["In Progress"]}</b><br>In Progress</div>
+<div class="stat"><b>${counts.Resolved}</b><br>Resolved</div>
+</div>`;
+
+complaintsEl.innerHTML=complaints.length?complaints.map((c,i)=>`
+<div class="complaint">
+<b>${escapeHtml(c.category)} • ${escapeHtml(c.priority)} Priority</b>
+<p><b>${escapeHtml(c.studentName)}</b> | Room ${escapeHtml(c.roomNumber)}</p>
+<p>${escapeHtml(c.description)}</p>
+<span class="status">Status: ${escapeHtml(c.status)}</span>
+<div class="actions">
+<button onclick="updateStatus(${i},'In Progress')">In Progress</button>
+<button onclick="updateStatus(${i},'Resolved')">Resolved</button>
+<button onclick="removeComplaint(${i})">Delete</button>
+</div>
+</div>`).join(""):"<p>No complaints submitted yet.</p>";
+}
+
+form.addEventListener("submit",e=>{
+e.preventDefault();
+complaints.unshift({
+studentName:document.getElementById("studentName").value,
+roomNumber:document.getElementById("roomNumber").value,
+category:document.getElementById("category").value,
+priority:document.getElementById("priority").value,
+description:document.getElementById("description").value,
+status:"Pending",
+date:new Date().toLocaleDateString()
+});
+form.reset();save();
+});
+render();
+</script>
+</body>
+</html>
